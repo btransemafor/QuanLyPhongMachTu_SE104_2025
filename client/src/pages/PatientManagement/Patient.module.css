@@ -1,0 +1,7 @@
+.selectedRow > td {
+  background-color: #e6f7ff !important;
+}
+
+.selectedRow:hover > td {
+  background-color: #d5f1ff !important;
+}

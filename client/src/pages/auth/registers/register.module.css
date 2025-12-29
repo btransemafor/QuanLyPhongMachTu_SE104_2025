@@ -1,0 +1,29 @@
+.container {
+  min-height: calc(100vh - 80px); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10px 10px 100px; /* padding-bottom đủ lớn để card không che footer */
+  position: relative;
+  overflow: hidden;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 30px rgba(20, 20, 40, 0.06);
+}
+
+.footerRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #555;
+}
+
+.loginLink {
+  color: #1890ff;
+}

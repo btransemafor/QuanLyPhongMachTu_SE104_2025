@@ -1,0 +1,142 @@
+/* BatchSelectionModal.css */
+/* Phong cách hiện đại, sạch sẽ, chuyên nghiệp cho hệ thống quản lý nhà thuốc */
+
+.batch-selection-modal .ant-modal-header {
+  background: linear-gradient(90deg, #1890ff, #096dd9);
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.batch-selection-modal .ant-modal-title {
+  color: white !important;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.batch-selection-modal .ant-modal-close-x {
+  color: white;
+}
+
+/* Table styling */
+.batch-selection-modal .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.batch-selection-modal .ant-table-thead > tr > th {
+  background: #f5f7fa;
+  color: #262626;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center !important;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.batch-selection-modal .ant-table-tbody > tr > td {
+  padding: 10px 8px !important;
+  font-size: 13.5px;
+}
+
+/* Highlight dòng đã chọn */
+.batch-selection-modal .selected-batch-row {
+  background-color: #e6f7ff !important;
+  font-weight: 500;
+}
+
+.batch-selection-modal .selected-batch-row:hover > td {
+  background-color: #bae7ff !important;
+}
+
+/* Hover hiệu ứng mượt */
+.batch-selection-modal .ant-table-tbody > tr:hover > td {
+  background-color: #fafafa;
+  transition: background-color 0.2s ease;
+}
+
+/* Tag màu đẹp hơn */
+.batch-selection-modal .ant-tag {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Cột "Chọn SL" - InputNumber đẹp */
+.batch-selection-modal .ant-input-number {
+  width: 90px;
+}
+
+.batch-selection-modal .ant-input-number-input {
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Footer buttons & info */
+.batch-selection-modal .ant-divider {
+  margin: 16px 0;
+}
+
+.batch-selection-modal .footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.batch-selection-modal .total-selected-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1890ff;
+}
+
+.batch-selection-modal .total-selected-text.insufficient {
+  color: #ff4d4f;
+}
+
+/* Nút tự động chọn & reset */
+.batch-selection-modal .ant-btn-dashed {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.batch-selection-modal .ant-btn-dashed:hover {
+  background-color: #e6f7ff;
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+/* Loading spinner đẹp hơn */
+.batch-selection-modal .ant-spin-dot-item {
+  background-color: #1890ff;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+  .batch-selection-modal .ant-modal {
+    margin: 8px;
+    padding-bottom: 0;
+  }
+
+  .batch-selection-modal .ant-modal-body {
+    padding: 16px;
+  }
+
+  .batch-selection-modal .ant-table {
+    font-size: 13px;
+  }
+
+  .footer-actions {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .batch-selection-modal .total-selected-text {
+    text-align: center;
+    font-size: 15px;
+  }
+}
+
+/* Thêm class động để đổi màu khi chưa đủ số lượng */
+.total-selected-text.sufficient {
+  color: #52c41a;
+}
