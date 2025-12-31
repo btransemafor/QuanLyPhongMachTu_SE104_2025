@@ -84,7 +84,8 @@ jspm_packages/
 *.swp
 *.swo
 *~
-
+.github/
+.shared/
 # OS
 .DS_Store
 .DS_Store?
