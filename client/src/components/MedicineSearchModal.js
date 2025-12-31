@@ -51,31 +51,34 @@ const MedicineSearchModal = ({
   });
 
   // Fetch dữ liệu
-  const fetchMedicines = useCallback(async (page = 1, pageSize = 10, search = "") => {
-    try {
-      setLoading(true);
-      const res = await medicinesAPI.getMedicines({
-        page,
-        limit: pageSize,
-        search: search.trim(),
-      });
+  const fetchMedicines = useCallback(
+    async (page = 1, pageSize = 10, search = "") => {
+      try {
+        setLoading(true);
+        const res = await medicinesAPI.getMedicines({
+          page,
+          limit: pageSize,
+          search: search.trim(),
+        });
 
-      if (res.data.success) {
-        setData(res.data.data);
-        setPagination((prev) => ({
-          ...prev,
-          current: page,
-          pageSize,
-          total: res.data.pagination?.totalItems || res.data.data.length,
-        }));
+        if (res.data.success) {
+          setData(res.data.data);
+          setPagination((prev) => ({
+            ...prev,
+            current: page,
+            pageSize,
+            total: res.data.pagination?.totalItems || res.data.data.length,
+          }));
+        }
+      } catch (error) {
+        message.error("Lỗi tải danh sách thuốc");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      message.error("Lỗi tải danh sách thuốc");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   // Load khi mở modal hoặc search thay đổi
   useEffect(() => {
@@ -91,21 +94,24 @@ const MedicineSearchModal = ({
   };
 
   // Xử lý chọn thuốc (click hoặc double click)
-  const handleRowClick = useCallback((record) => {
-    try {
-      if (!record) {
-        message.error("Dữ liệu thuốc không hợp lệ");
-        return;
+  const handleRowClick = useCallback(
+    (record) => {
+      try {
+        if (!record) {
+          message.error("Dữ liệu thuốc không hợp lệ");
+          return;
+        }
+        onSelect(record); // TRẢ VỀ THUỐC CHO COMPONENT CHA
+        setTimeout(() => {
+          onCancel(); // Đóng modal
+        }, 100);
+      } catch (error) {
+        message.error("Lỗi khi chọn thuốc");
+        console.error(error);
       }
-      onSelect(record);   // TRẢ VỀ THUỐC CHO COMPONENT CHA
-      setTimeout(() => {
-        onCancel();         // Đóng modal
-      }, 100);
-    } catch (error) {
-      message.error("Lỗi khi chọn thuốc");
-      console.error(error);
-    }
-  }, [onSelect, onCancel]);
+    },
+    [onSelect, onCancel]
+  );
 
   const handleRowDoubleClick = (record) => {
     handleRowClick(record);
@@ -164,14 +170,28 @@ const MedicineSearchModal = ({
     },
     {
       title: "Trạng thái",
-      dataIndex: "is_active",
-      key: "is_active",
-      width: 120,
-      render: (active) => (
-        <Tag color={active ? "green" : "red"}>
-          {active ? "Hoạt động" : "Ngừng"}
-        </Tag>
-      ),
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status) => {
+        const colors = {
+          active: "green",
+          inactive: "default",
+          low_stock: "orange",
+          out_of_stock: "red",
+          expired: "volcano",
+        };
+
+        const labels = {
+          active: "Hoạt động",
+          inactive: "Ngừng hoạt động",
+          low_stock: "Dưới mức tồn kho",
+          out_of_stock: "Hết hàng",
+          expired: "Hết hạn",
+        };
+
+        return <Tag color={colors[status]}>{labels[status]}</Tag>;
+      },
     },
   ];
 
@@ -205,7 +225,9 @@ const MedicineSearchModal = ({
         <Space>
           <Text type="secondary">
             {data.length > 0
-              ? `${(pagination.current - 1) * pagination.pageSize + 1}-${Math.min(
+              ? `${
+                  (pagination.current - 1) * pagination.pageSize + 1
+                }-${Math.min(
                   pagination.current * pagination.pageSize,
                   pagination.total
                 )}`

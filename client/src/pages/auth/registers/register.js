@@ -4,22 +4,25 @@ import { Form, Input, Button, Card, message, Typography, Spin } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { useRegister } from "../../../hooks/auth/userRegister";
 import logo from "../../../assets/LOGO.png";
-
+import { useToast } from "../../../contexts/ToastContext";
 const { Title, Text } = Typography;
 
 const Register = () => {
   const [form] = Form.useForm();
   const { register, loading } = useRegister();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
+  const {toast} = useToast(); 
 
   const onFinish = async (values) => {
     // delete values.confirmPassword; // không gửi confirmPassword về backend
     try {
       await register(values);
+    
+
       // setTimeout(() => navigate("/login"), 1500);
     } catch (e) {
       const msg = e?.response?.data?.message || "Đăng ký thất bại";
-      message.error(msg);
+      toast.error(msg);
     }
   };
 

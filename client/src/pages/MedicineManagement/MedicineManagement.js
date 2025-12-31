@@ -17,6 +17,7 @@ import {
   Tooltip,
   Col,
   Row,
+  InputNumber,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,6 +26,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { FaPills } from "react-icons/fa";
 import { medicinesAPI, unitsAPI } from "../../services/api";
@@ -34,6 +36,7 @@ import useColumnVisibility from "../../components/hooks/useColumnVisibility";
 import FileDropdown from "../../components/FileDropdown";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../contexts/ToastContext";
 const { Search } = Input;
 
 const getLabelStatus = (status) => {
@@ -68,7 +71,8 @@ const MedicineManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [status, setStatus] = useState({
     active: true,
@@ -129,11 +133,11 @@ const MedicineManagement = () => {
 
         setIsDetailVisible(true); // mở modal
       } else {
-        message.error("Không thể tải chi tiết thuốc");
+        toast.error("Không thể tải chi tiết thuốc");
       }
     } catch (error) {
       console.error("Error fetching medicine detail:", error);
-      message.error("Không thể tải chi tiết thuốc");
+      toast.error("Không thể tải chi tiết thuốc");
     } finally {
       setLoading(false);
     }
@@ -166,7 +170,7 @@ const MedicineManagement = () => {
       }
     } catch (error) {
       console.error("Error fetching medicines:", error);
-      message.error("Không thể tải danh sách thuốc");
+      toast.error("Không thể tải danh sách thuốc");
     } finally {
       setLoading(false);
     }
@@ -196,18 +200,41 @@ const MedicineManagement = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await medicinesAPI.deleteMedicine(id);
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: "Xác nhận xóa thuốc",
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <>
+          <p>Bạn có chắc chắn muốn xóa thuốc này?</p>
+          <p style={{ color: "red", marginBottom: 0 }}>
+            Thao tác này không thể hoàn tác.
+          </p>
+        </>
+      ),
+      okText: "Xóa",
+      cancelText: "Hủy",
+      okType: "danger",
 
-      if (response.data.success) {
-        message.success("Xóa thuốc thành công!");
-        fetchMedicines();
-      }
-    } catch (error) {
-      console.error("Error deleting medicine:", error);
-      message.error("Không thể xóa thuốc");
-    }
+      onOk: async () => {
+        try {
+          const response = await medicinesAPI.deleteMedicine(id);
+
+          if (response.data.success) {
+            toast.success("Xóa thuốc thành công!");
+            fetchMedicines();
+          }
+        } catch (error) {
+          console.error("Error deleting medicine:", error);
+
+          //  bắt message từ BE nếu có
+          const message =
+            error?.response?.data?.message || "Không thể xóa thuốc";
+
+          toast.error(message);
+        }
+      },
+    });
   };
 
   const handleSubmit = async (values) => {
@@ -220,11 +247,12 @@ const MedicineManagement = () => {
           values
         );
       } else {
+        console.log('Data Medince: ', values)
         response = await medicinesAPI.createMedicine(values);
       }
 
       if (response.data.success) {
-        message.success(
+        toast.success(
           editingMedicine
             ? "Cập nhật thuốc thành công!"
             : "Thêm thuốc thành công!"
@@ -239,15 +267,11 @@ const MedicineManagement = () => {
       if (error.response?.status === 409) {
         const errorMsg = error.response?.data?.message || "Thuốc đã tồn tại!";
         console.log("Showing error message:", errorMsg);
-        message.warning({
-          content: errorMsg,
-          duration: 2,
-          key: "medicine-error", // Key để tránh duplicate
-        });
+        toast.warning(errorMsg);
         return;
       }
 
-      message.error("Có lỗi xảy ra!");
+      toast.error("Có lỗi xảy ra!");
     }
   };
   // --- Search ------
@@ -297,6 +321,7 @@ const MedicineManagement = () => {
     {
       title: "Ghi chú",
       dataIndex: "note",
+       width: 150,
       key: "note",
       render: (_, record) => record.note || "-",
     },
@@ -326,7 +351,15 @@ const MedicineManagement = () => {
         return <Tag color={colors[status]}>{labels[status]}</Tag>;
       },
     },
-
+  {
+      title: "Thời gian tạo",
+      dataIndex: "created_at",
+      render: (value) =>
+        value ? moment(value).format("DD-MM-YYYY HH:mm") : "-",
+      width: 120,
+      sorter: (a, b) =>
+        moment(a.created_at).valueOf() - moment(b.created_at).valueOf(),
+    },
     {
       title: "Thao tác",
       key: "actions",
@@ -353,14 +386,14 @@ const MedicineManagement = () => {
             ></Button>
           </Tooltip>
           <Tooltip title="Xóa">
-            <Popconfirm
-              title="Bạn có chắc muốn xóa thuốc này?"
-              onConfirm={() => handleDelete(record.medicine_id)}
-              okText="Xóa"
-              cancelText="Hủy"
-            >
-              <Button danger size="small" icon={<DeleteOutlined />}></Button>
-            </Popconfirm>
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                handleDelete(record.medicine_id);
+              }}
+            ></Button>
           </Tooltip>
         </Space>
       ),
@@ -730,9 +763,9 @@ const MedicineManagement = () => {
                   { required: true, message: "Vui lòng nhập tồn tối thiểu!" },
                 ]}
               >
-                <Input
-                  type="number"
+                <InputNumber
                   min={0}
+                  style={{ width: "100%" }}
                   placeholder="Nhập lượng tồn tối thiểu"
                 />
               </Form.Item>
@@ -744,20 +777,24 @@ const MedicineManagement = () => {
                 label="Hoạt động"
                 name="is_active"
                 initialValue={false}
-                valuePropName="checked"
+                valuePropName="checked" 
               >
                 <Switch />
               </Form.Item>
+
+                {/* Switch PHẢI để trong Form.Item NO STYLE */}
+            {/*   <Form.Item name="is_active" valuePropName="checked" noStyle>
+                <Switch checkedChildren={<CheckCircleOutlined />} />
+              </Form.Item> */}
             </Col>
           </Row>
 
           {/* Ghi chú */}
           <Form.Item name="note" label="Ghi chú">
-            <Input.TextArea 
-            rows={3} 
-            placeholder="Nhập ghi chú bổ sung (tối đa 300 ký tự) " 
-            maxLength={300}
-            
+            <Input.TextArea
+              rows={3}
+              placeholder="Nhập ghi chú bổ sung (tối đa 300 ký tự) "
+              maxLength={300}
             />
           </Form.Item>
 
@@ -772,11 +809,13 @@ const MedicineManagement = () => {
               >
                 Hủy
               </Button>
-              <Button type="primary" htmlType="submit" 
-               style={{
-                background: "#0e1182ff",
-                border: "none",
-              }}
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{
+                  background: "#0e1182ff",
+                  border: "none",
+                }}
               >
                 {editingMedicine ? "Cập nhật" : "Thêm mới"}
               </Button>
@@ -786,7 +825,6 @@ const MedicineManagement = () => {
       </Modal>
 
       <MedicineDetailModal
-    
         visible={isDetailVisiable}
         medicine={selectedMedicine}
         onClose={handleCloseDetail}

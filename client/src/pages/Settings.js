@@ -22,7 +22,7 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import { settingsAPI } from "../services/api";
-
+import { useToast } from "../contexts/ToastContext";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -30,7 +30,7 @@ const SettingsFinance = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-
+  const {toast} = useToast();
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -54,7 +54,7 @@ const SettingsFinance = () => {
         });
       }
     } catch (error) {
-      message.error("Không thể tải cài đặt tài chính");
+     toast.error("Không thể tải cài đặt tài chính");
     } finally {
       setFetching(false);
     }
@@ -64,9 +64,9 @@ const SettingsFinance = () => {
     try {
       setLoading(true);
       await settingsAPI.updateSettings(values);
-      message.success("Cập nhật cài đặt tài chính thành công!");
+      toast.success("Cập nhật tham số hệ thống thành công!");
     } catch (error) {
-      message.error("Cập nhật thất bại");
+      toast.error("Cập nhật thất bại");
     } finally {
       setLoading(false);
     }

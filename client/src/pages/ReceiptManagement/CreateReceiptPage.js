@@ -567,7 +567,10 @@ const CreateReceiptPage = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={addMedicine}
-                style={{ borderRadius: 8 }}
+                 style={{
+                background: "#0e1182ff",
+                border: "none",
+              }}
               >
                 Thêm thuốc
               </Button>
@@ -711,7 +714,7 @@ const CreateReceiptPage = () => {
 
               {/* BUTTON LƯU NHÁP */}
               <Button
-                type="primary"
+               // type="primary"
                 size="large"
                 loading={loading}
                 onClick={() => {

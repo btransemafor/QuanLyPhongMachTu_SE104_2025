@@ -31,7 +31,7 @@ import { rolesAPI, usersAPI } from "../../services/api";
 import FileDropdown from "../../components/FileDropdown";
 import UserModal from "./UserModal";
 import moment from "moment";
-
+import { useToast } from "../../contexts/ToastContext";
 // ============================================================
 // Constants & Helpers
 // ============================================================
@@ -87,7 +87,6 @@ const UserManagement = () => {
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [password, setPassword] = useState("");
 
   // Filter States
   const [filters, setFilters] = useState({
@@ -103,6 +102,8 @@ const UserManagement = () => {
     pageSize: 10,
     total: 0,
   });
+
+  const {toast} = useToast();
 
   // ============================================================
   // Data Fetching
@@ -134,7 +135,7 @@ const UserManagement = () => {
         }));
       }
     } catch (error) {
-      message.error("Không thể tải danh sách người dùng");
+      toast.error("Không thể tải danh sách người dùng");
     } finally {
       setLoading(false);
     }
@@ -153,7 +154,7 @@ const UserManagement = () => {
         setRoles(response.data.data);
       }
     } catch (error) {
-      message.error("Không thể tải danh sách vai trò");
+      toast.error("Không thể tải danh sách vai trò");
     }
   };
 
@@ -187,14 +188,14 @@ const UserManagement = () => {
         : await usersAPI.createUser(payload);
 
       if (response.data.success) {
-        message.success(
+        toast.success(
           editingUser ? "Cập nhật thành công!" : "Thêm mới thành công!"
         );
         handleCloseModal();
         fetchUsers();
       }
     } catch (error) {
-      message.error(error.response?.data?.message || "Không thể lưu dữ liệu");
+      toast.error(error.response?.data?.message || "Không thể lưu dữ liệu");
     }
   };
 
@@ -202,33 +203,29 @@ const UserManagement = () => {
     try {
       const response = await usersAPI.deleteUser(id);
       if (response.data.success) {
-        message.success("Xóa thành công!");
+        toast.success("Xóa thành công!");
         fetchUsers();
       }
     } catch (error) {
-      message.error(error.response?.data?.message || "Không thể xóa");
+      toast.error(error.response?.data?.message || "Không thể xóa");
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!password || password.length < 6) {
-      message.error("Mật khẩu phải có ít nhất 6 ký tự");
-      return;
-    }
-
+  const handleResetPassword = async (formValues) => {
     try {
+      const { password } = formValues;
       const response = await usersAPI.resetPassword(selectedUser?.user_id, {
         new_password: password,
       });
 
       if (response.data.success) {
-        message.success("Đặt lại mật khẩu thành công!");
+        toast.success("Đặt lại mật khẩu thành công!");
         setResetModalVisible(false);
-        setPassword("");
+        form.resetFields();
         setSelectedUser(null);
       }
     } catch (error) {
-      message.error(
+     toast.error(
         error.response?.data?.message || "Không thể đặt lại mật khẩu"
       );
     }
@@ -265,14 +262,14 @@ const UserManagement = () => {
 
   const handleOpenResetModal = (record) => {
     setSelectedUser(record);
-    setPassword("");
+    form.resetFields();
     setResetModalVisible(true);
   };
 
   const handleCloseResetModal = () => {
     setResetModalVisible(false);
     setSelectedUser(null);
-    setPassword("");
+    form.resetFields();
   };
 
   // ============================================================

@@ -62,6 +62,7 @@ app.use('*', (req, res) => {
 //syncPreviousMonthReport(); 
 syncYesterdayDailyReport();
 startReportSyncJobs(); 
+ syncPreviousMonthReport()
 startReportUsageMedicineSyncJobs(); 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("API running on 0.0.0.0:4000");

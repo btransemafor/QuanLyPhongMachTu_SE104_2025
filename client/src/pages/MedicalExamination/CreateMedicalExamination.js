@@ -171,7 +171,9 @@ const CreateMedicalExamination = () => {
   const fetchMedicines = async () => {
     setLoading(true);
     try {
-      const response = await medicinesAPI.getMedicines();
+      const response = await medicinesAPI.getMedicines({
+        active_only : "true"
+      });
       if (response.data.success) {
         const data = response.data.data;
         setMedicines(data);
@@ -326,7 +328,7 @@ const CreateMedicalExamination = () => {
   const fetchUsageMethods = async () => {
     try {
       setLoading(true);
-      const response = await usageMethodsAPI.getUsageMethods();
+      const response = await usageMethodsAPI.getUsageMethods({is_active: true});
       if (response.data.success) {
         setUsageMethods(response.data.data);
         const data = response.data.data;

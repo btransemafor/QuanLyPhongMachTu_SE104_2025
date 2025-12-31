@@ -21,18 +21,7 @@ router.post(
 
     try {
       await client.query("BEGIN"); //  BẮT ĐẦU TRANSACTION
-
-    /*   const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation errors",
-          errors: errors.array(),
-        });
-      } */
-
       const { medical_record_id, note, invoice_date } = req.body;
-
       console.log(medical_record_id, note, invoice_date)
 
       // 1. Check appointment
@@ -136,7 +125,7 @@ router.post(
         ["completed", medical_record_id]
       );
 
-      await client.query("COMMIT"); // 🔥 KHOÁ THANH CÔNG
+      await client.query("COMMIT"); //  KHOÁ THANH CÔNG
 
       return res.status(201).json({
         success: true,
@@ -145,7 +134,7 @@ router.post(
       });
 
     } catch (error) {
-      await client.query("ROLLBACK"); // 🔥 ĐẢO NGƯỢC MỌI THAY ĐỔI
+      await client.query("ROLLBACK"); //  ĐẢO NGƯỢC MỌI THAY ĐỔI
       console.error("Create invoice error:", error);
       return res.status(500).json({
         success: false,
@@ -157,6 +146,97 @@ router.post(
   }
 );
 
+
+// === GET INVOICE STATS (toàn bộ dữ liệu, không phân trang) ===
+router.get(
+  "/stats",
+  [authenticateToken, authorizeRoles("receptionist", "admin")],
+  async (req, res) => {
+    try {
+      const {
+        patient_id,
+        payment_status,
+        start_date,
+        end_date,
+        search,
+      } = req.query;
+
+      // === Base query chung ===
+      let baseQuery = `
+      FROM invoices i
+      JOIN medical_records mr ON mr.medical_record_id = i.medical_record_id
+      JOIN daily_appointments da ON da.medical_record_id = mr.medical_record_id
+      JOIN patients p ON da.patient_id = p.patient_id
+      WHERE 1=1
+    `;
+      let queryParams = [];
+      let paramCount = 0;
+
+      if (patient_id) {
+        paramCount++;
+        baseQuery += ` AND da.patient_id = $${paramCount}`;
+        queryParams.push(patient_id);
+      }
+
+      if (payment_status) {
+        paramCount++;
+        baseQuery += ` AND i.payment_status = $${paramCount}`;
+        queryParams.push(payment_status);
+      }
+
+      if (start_date) {
+        paramCount++;
+        baseQuery += ` AND DATE(i.created_at) >= $${paramCount}`;
+        queryParams.push(start_date);
+      }
+
+      if (end_date) {
+        paramCount++;
+        baseQuery += ` AND DATE(i.created_at) <= $${paramCount}`;
+        queryParams.push(end_date);
+      }
+
+      // === THÊM SEARCH ===
+      if (search && search.trim() !== "") {
+        paramCount++;
+        baseQuery += ` AND (
+          LOWER(p.full_name) LIKE LOWER($${paramCount}) OR
+          LOWER(i.invoice_code) LIKE LOWER($${paramCount})
+        )`;
+        queryParams.push(`%${search.trim()}%`);
+      }
+
+      // === Stats query ===
+      const statsQuery = `
+        SELECT
+          COUNT(*) as total_invoices,
+          SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as paid_count,
+          SUM(CASE WHEN payment_status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+          COALESCE(SUM(total_amount), 0) as total_revenue
+        ${baseQuery}
+      `;
+
+      const statsResult = await pool.query(statsQuery, queryParams);
+      const stats = statsResult.rows[0];
+
+      res.json({
+        success: true,
+        data: {
+          total: parseInt(stats.total_invoices) || 0,
+          paid: parseInt(stats.paid_count) || 0,
+          pending: parseInt(stats.pending_count) || 0,
+          totalRevenue: parseFloat(stats.total_revenue) || 0,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching invoice stats:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error while fetching invoice stats",
+      });
+    }
+  }
+);
 router.get(
   "/:id",
   [authenticateToken, authorizeRoles("receptionist", "admin")],
@@ -485,6 +565,8 @@ router.put(
     }
   }
 );
+
+
 router.get(
   "/",
   [authenticateToken, authorizeRoles("receptionist", "admin")],
@@ -593,7 +675,6 @@ router.get(
     }
   }
 );
-
 /// Delete Invoice pending implementation
 router.delete(
   "/:id",

@@ -13,7 +13,7 @@ import {
 import dayjs from "dayjs";
 import { invoicesAPI } from "../../services/api";
 import  generateInvoicePDF  from './generateInvoicePDF';
-
+import { useToast } from "../../contexts/ToastContext";
 const InvoiceModal = ({ visible, invoiceId, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState(null);
@@ -24,6 +24,8 @@ const InvoiceModal = ({ visible, invoiceId, onClose }) => {
       fetchInvoiceBasic();
     }
   }, [visible, invoiceId]);
+
+  const {toast} = useToast()
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("vi-VN", {
@@ -42,7 +44,7 @@ const InvoiceModal = ({ visible, invoiceId, onClose }) => {
       console.log("Data invoice cho modal", res.data.data);
       setInvoice(res.data.data);
     } catch (err) {
-      message.error("Không thể tải hóa đơn");
+      toast.error("Không thể tải hóa đơn");
     } finally {
       setLoading(false);
     }
@@ -63,13 +65,13 @@ const InvoiceModal = ({ visible, invoiceId, onClose }) => {
     const result = await generateInvoicePDF(invoice, clinicInfo);
     
     if (result.success) {
-      message.success(`Đã tải xuống ${result.fileName}`);
+      toast.success(`Đã tải xuống ${result.fileName}`);
     } else {
-      message.error("Không thể tạo PDF");
+      toast.error("Không thể tạo PDF");
     }
   } catch (error) {
     console.error(error);
-    message.error("Có lỗi xảy ra khi tạo PDF");
+    toast.error("Có lỗi xảy ra khi tạo PDF");
   }
   }
 
@@ -87,19 +89,19 @@ const handleDownloadPDF = async () => {
     const result = await generateInvoicePDF(invoice, clinicInfo);
     
     if (result.success) {
-      message.success(`Đã tải xuống ${result.fileName}`);
+      toast.success(`Đã tải xuống ${result.fileName}`);
     } else {
-      message.error("Không thể tạo PDF");
+      toast.error("Không thể tạo PDF");
     }
   } catch (error) {
     console.error(error);
-    message.error("Có lỗi xảy ra khi tạo PDF");
+    toast.error("Có lỗi xảy ra khi tạo PDF");
   }
 };
 
   const handlePrintInvoice = () => {
     if (!invoiceRef.current) {
-      message.error("Không thể in hóa đơn");
+      toast.error("Không thể in hóa đơn");
       return;
     }
 
@@ -254,8 +256,6 @@ const handleDownloadPDF = async () => {
     >
       <div ref={invoiceRef}>
         {" "}
-        {/*  Wrap nội dung cần in */}
-        {/* Header với gradient */}
         <div className="relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-10"

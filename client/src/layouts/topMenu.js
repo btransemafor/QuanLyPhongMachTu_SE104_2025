@@ -67,17 +67,17 @@ const TopMenu = ({ userRole = "admin" }) => {
         icon: <BarChartOutlined />,
         children: [
           {
-            key: "/reports/revenue",
-            label: <Link to="/reports/revenue">Doanh thu</Link>,
+            key: "/reports/revenue-overview",
+            label: <Link to="/reports/revenue-overview">Doanh thu</Link>,
           },
           {
-            key: "/reports/medicine-usage",
-            label: <Link to="/reports/medicine-usage">Dùng thuốc</Link>,
+            key: "/reports/medicine-usage-overview",
+            label: <Link to="/reports/medicine-usage-overview">Dùng thuốc</Link>,
           },
-          {
+         /*  {
             key: "/reports/patient-stats",
             label: <Link to="/reports/patient-stats">Bệnh nhân</Link>,
-          },
+          }, */
         ],
       },
       {

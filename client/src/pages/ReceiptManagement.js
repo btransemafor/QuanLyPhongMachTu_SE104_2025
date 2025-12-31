@@ -38,13 +38,14 @@ import { useNavigate } from "react-router-dom";
 import FileDropdown from "../components/FileDropdown";
 import useColumnVisibility from "../components/hooks/useColumnVisibility";
 import ColumnVisibilityDropdown from "../components/ColumnSetting";
-
+import { useToast } from "../contexts/ToastContext";
 const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 const ReceiptMedicineManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const {toast} = useToast()
 
   // State management
   const [receipts, setReceipts] = useState([]);
@@ -121,7 +122,7 @@ const ReceiptMedicineManagement = () => {
       }
     } catch (error) {
       console.error("Fetch receipts error:", error);
-      message.error("Không thể tải danh sách phiếu nhập");
+      toast.error("Không thể tải danh sách phiếu nhập");
     } finally {
       setLoading(false);
     }
@@ -133,7 +134,7 @@ const ReceiptMedicineManagement = () => {
       if (res.data.success) setMedicines(res.data.data);
     } catch (error) {
       console.error("Fetch medicines error:", error);
-      message.error("Không thể tải danh sách thuốc");
+      toast.error("Không thể tải danh sách thuốc");
     }
   }, []);
 
@@ -161,7 +162,7 @@ const ReceiptMedicineManagement = () => {
     setSearchTerm("");
     form.resetFields();
     fetchReceipts(defaultFilters);
-    message.success("Đã xóa tất cả bộ lọc");
+    toast.success("Đã xóa tất cả bộ lọc");
   };
 
   const handleApplyFilters = () => {
@@ -181,7 +182,7 @@ const ReceiptMedicineManagement = () => {
     };
     handleFilterChange(newFilters);
     setFilterDrawerVisible(false);
-    message.success("Đã áp dụng bộ lọc");
+    toast.success("Đã áp dụng bộ lọc");
   };
 
   // Pagination handlers
@@ -208,12 +209,12 @@ const ReceiptMedicineManagement = () => {
   const handleDeleteReceipt = async (id) => {
     try {
       await importReceiptsAPI.deleteImportReceipt(id);
-      message.success("Xóa phiếu nhập thành công");
+      toast.success("Xóa phiếu nhập thành công");
       fetchReceipts();
     } catch (error) {
       const errorMsg =
         error.response?.data?.message || "Không thể xóa phiếu nhập";
-      message.error(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -228,11 +229,11 @@ const ReceiptMedicineManagement = () => {
         setSelectedReceipt(res.data.data);
         navigate(`/receipts/${record.import_receipt_id}`);
       } else {
-        message.warning("Không tìm thấy chi tiết phiếu nhập");
+        toast.warning("Không tìm thấy chi tiết phiếu nhập");
       }
     } catch (error) {
       console.error("Lỗi khi tải chi tiết phiếu nhập:", error);
-      message.error("Không thể tải chi tiết phiếu nhập");
+      toast.error("Không thể tải chi tiết phiếu nhập");
     }
   }, []);
 
@@ -614,7 +615,6 @@ const ReceiptMedicineManagement = () => {
               options={[
                 { label: "Nháp", value: "draft" },
                 { label: "Đã xác nhận", value: "confirmed" },
-                { label: "Đã hủy", value: "cancelled" },
               ]}
             />
           </Form.Item>

@@ -11,7 +11,7 @@ const router = express.Router();
  *  Get all medicines (with pagination, search, and filter by active)
  * ============================
  */
-router.get("/", authenticateToken, async (req, res) => {
+/* router.get("/", authenticateToken, async (req, res) => {
   try {
     // 1. Lấy query params với giá trị mặc định
     const {
@@ -30,6 +30,10 @@ router.get("/", authenticateToken, async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     console.log("status:", filterStatus);
+
+    const activeOnly = active_only === "true";
+const onsetFlag = onset === "true";
+
 
     // 2. Xử lý filterStatus từ client (nếu có)
     let selectedStatus = [];
@@ -66,10 +70,10 @@ router.get("/", authenticateToken, async (req, res) => {
     }
 
     // 3b. Filter active_only
-    if (active_only === "true" && onset === true) {
-      query += ` AND m.is_active = $${paramIndex++}`;
-      params.push(true);
-    }
+    if (activeOnly && onsetFlag) {
+  query += ` AND m.is_active = $${paramIndex++}`;
+  params.push(true);
+}
 
     // 3c. Search fuzzy match
     if (search) {
@@ -123,6 +127,138 @@ router.get("/", authenticateToken, async (req, res) => {
     );
 
     // 6. Trả dữ liệu
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        itemsPerPage: limitNum,
+      },
+    });
+  } catch (err) {
+    console.error("Get medicines error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching medicines",
+    });
+  }
+});
+ */
+
+
+
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      active_only = "true",
+      filterStatus,
+      onset = "false", // Sửa default thành string
+      unit_id,
+    } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    const activeOnly = active_only === "true";
+    const onsetFlag = onset === "true";
+
+    console.log("Filters:", { activeOnly, onsetFlag, filterStatus, unit_id });
+
+    // Xử lý filterStatus
+    let selectedStatus = [];
+    if (filterStatus && typeof filterStatus === "object") {
+      selectedStatus = Object.keys(filterStatus).filter(
+        (key) => filterStatus[key] === "true" || filterStatus[key] === true
+      );
+    }
+
+    // Build main query
+    let query = `
+      SELECT m.medicine_id, m.medicine_name, m.stock_quantity, m.min_stock_level, 
+             m.note, m.unit_id, u.unit_name AS unit_name, m.is_active, m.status, 
+             m.created_at, m.updated_at
+      FROM medicines m
+      LEFT JOIN units u ON m.unit_id = u.unit_id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIndex = 1;
+
+    // Filter theo status
+    if (selectedStatus.length > 0) {
+      const placeholders = selectedStatus.map(() => `$${paramIndex++}`).join(", ");
+      query += ` AND m.status IN (${placeholders})`;
+      params.push(...selectedStatus);
+    }
+
+    // Filter theo unit_id
+    if (unit_id) {
+      query += ` AND m.unit_id = $${paramIndex++}`;
+      params.push(parseInt(unit_id));
+    }
+
+    // Filter is_active - SỬA Ở ĐÂY
+    // Nếu activeOnly = true thì chỉ lấy active, không cần kiểm tra onset
+    if (activeOnly) {
+      query += ` AND m.is_active = $${paramIndex++}`;
+      params.push(true);
+    }
+
+    // Search fuzzy match
+    if (search) {
+      query += ` AND (m.medicine_name ILIKE $${paramIndex} OR m.medicine_name % $${paramIndex + 1})`;
+      params.push(`%${search}%`, search);
+      query += ` ORDER BY similarity(m.medicine_name, $${paramIndex + 1}) DESC`;
+      paramIndex += 2;
+    } else {
+      query += ` ORDER BY m.medicine_name ASC`;
+    }
+
+    // Pagination
+    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    params.push(limitNum, offset);
+
+    console.log("Query:", query);
+    console.log("Params:", params);
+
+    const result = await pool.query(query, params);
+
+    // Count query - PHẢI KHỚP VỚI MAIN QUERY
+    let countQuery = "SELECT COUNT(*) FROM medicines m WHERE 1=1";
+    const countParams = [];
+    let countIndex = 1;
+
+    if (selectedStatus.length > 0) {
+      const placeholders = selectedStatus.map(() => `$${countIndex++}`).join(", ");
+      countQuery += ` AND m.status IN (${placeholders})`;
+      countParams.push(...selectedStatus);
+    }
+
+    if (unit_id) {
+      countQuery += ` AND m.unit_id = $${countIndex++}`;
+      countParams.push(parseInt(unit_id));
+    }
+
+    // SỬA: Phải giống main query
+    if (activeOnly) {
+      countQuery += ` AND m.is_active = $${countIndex++}`;
+      countParams.push(true);
+    }
+
+    if (search) {
+      countQuery += ` AND (m.medicine_name ILIKE $${countIndex} OR m.medicine_name % $${countIndex + 1})`;
+      countParams.push(`%${search}%`, search);
+      countIndex += 2;
+    }
+
+    const total = parseInt((await pool.query(countQuery, countParams)).rows[0].count);
+
     res.json({
       success: true,
       data: result.rows,
@@ -562,7 +698,7 @@ router.put(
 /**
  * ============================
  *  DELETE /api/medicines/:id
- *  Soft delete (set inactive)
+ *  Soft delete - only if no relations
  * ============================
  */
 router.delete(
@@ -572,19 +708,49 @@ router.delete(
     try {
       const { id } = req.params;
 
-      console.log("Delete medicine ID: ", id);
-      const check = await pool.query(
+      // Kiểm tra thuốc tồn tại
+      const medicineCheck = await pool.query(
         "SELECT medicine_id FROM medicines WHERE medicine_id = $1",
         [id]
       );
-      if (check.rows.length === 0)
-        return res
-          .status(404)
-          .json({ success: false, message: "Medicine not found" });
 
-      await pool.query("DELETE FROM medicines WHERE medicine_id = $1", [id]);
+      if (medicineCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Medicine not found",
+        });
+      }
 
-      res.json({ success: true, message: "Medicine deleted successfully" });
+      //  Kiểm tra liên kết batch
+      const batchCheck = await pool.query(
+        "SELECT 1 FROM batches WHERE medicine_id = $1 LIMIT 1",
+        [id]
+      );
+
+      if (batchCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Thuốc này đã được sử dụng trong hệ thống nên không thể xóa. Bạn có thể chuyển sang trạng thái Ngừng sử dụng.",
+        });
+      }
+
+      //  Soft delete
+      await pool.query(
+        `
+        UPDATE medicines
+        SET is_active = false,
+            status = 'inactive',
+            updated_at = NOW()
+        WHERE medicine_id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message: "Medicine deactivated successfully",
+      });
     } catch (err) {
       console.error("Delete medicine error:", err);
       res.status(500).json({
@@ -594,5 +760,6 @@ router.delete(
     }
   }
 );
+
 
 module.exports = router;

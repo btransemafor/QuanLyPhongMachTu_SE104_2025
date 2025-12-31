@@ -542,7 +542,6 @@ const DiseaseManagement = () => {
                   }}
                 >
                   <Option value="disease_name">Tên bệnh (A → Z)</Option>
-                  <Option value="disease_name_desc">Tên bệnh (Z → A)</Option>
                   <Option value="created_at">Ngày tạo (mới nhất)</Option>
                   <Option value="created_at_asc">Ngày tạo (cũ nhất)</Option>
                   <Option value="updated_at">Cập nhật gần đây</Option>

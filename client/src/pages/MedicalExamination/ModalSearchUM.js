@@ -17,6 +17,7 @@ import {
   SlidersOutlined,
 } from "@ant-design/icons";
 import { usageMethodsAPI } from '../../services/api'
+import { CircleCheck, CircleX } from "lucide-react";
 
 const { Text } = Typography;
 const { Search } = Input;
@@ -104,7 +105,7 @@ const UsageMethodSearchModal = ({
   const columns = [
     {
       title: "STT",
-      width: 60,
+      width: 30,
       align: "center",
       render: (_, __, index) =>
         (pagination.current - 1) * pagination.pageSize + index + 1,
@@ -114,15 +115,31 @@ const UsageMethodSearchModal = ({
       dataIndex: "usage_method_name",
       key: "usage_method_name",
       sorter: (a, b) => a.usage_method_name.localeCompare(b.usage_method_name),
-    }
+       width: 60,
+    }, 
+     {
+      title: "Kích hoạt",
+      dataIndex: "is_active",
+      key: "is_active",
+      width: 70,
+      render: (_, record) => {
+        return record.is_active ? (
+          <CircleCheck color="green" size={20} />
+        ) : (
+          <CircleX color="red" size={20} />
+        );
+      },
+    },
+
+
   ];
 
   return (
     <Modal
       title={
         <div className="flex items-center gap-2">
-          <SearchOutlined className="text-lg" />
-          <span className="font-semibold text-lg">Tìm kiếm thuốc</span>
+        
+          <span className="font-semibold text-lg">Cách dùng</span>
         </div>
       }
       open={visible}
@@ -132,20 +149,8 @@ const UsageMethodSearchModal = ({
       closeIcon={<span className="text-2xl">×</span>}
       bodyStyle={{ padding: 0 }}
     >
-      {/* Header */}
-      <div className="px-4 py-3 bg-gray-50 border-b flex justify-between items-center">
-        <Search
-          placeholder="Nhập tên thuốc, mã, hoạt chất..."
-          allowClear
-          enterButton
-          size="large"
-          onChange={(e) => handleSearch(e.target.value)}
-          onSearch={handleSearchEnter}
-          style={{ width: 380 }}
-        />
-
         <Space>
-          <Button icon={<SlidersOutlined />}>Bộ lọc</Button>
+       
           <Text type="secondary">
             {data.length > 0
               ? `${(pagination.current - 1) * pagination.pageSize + 1}-${Math.min(
@@ -164,7 +169,7 @@ const UsageMethodSearchModal = ({
             showSizeChanger={false}
           />
         </Space>
-      </div>
+
 
       {/* Table */}
       <Table
@@ -182,20 +187,6 @@ const UsageMethodSearchModal = ({
         })}
       />
 
-      {/* Footer */}
-      <div className="px-4 py-3 bg-white border-t text-right">
-        <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={onCreateNew}
-            style={{ backgroundColor: "#722ed1", borderColor: "#722ed1" }}
-          >
-            Tạo thuốc mới
-          </Button>
-          <Button onClick={onCancel}>Đóng</Button>
-        </Space>
-      </div>
     </Modal>
   );
 };

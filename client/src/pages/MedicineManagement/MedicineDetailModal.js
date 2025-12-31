@@ -12,7 +12,7 @@ import { BatchesAPI, medicinesAPI, settingsAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { Button, Form, Input, message, Modal, Tooltip } from "antd";
 import { EditOutlined, EyeOutlined } from "@ant-design/icons";
-
+import { useToast } from "../../contexts/ToastContext";
 const MedicineDetailModal = ({
   visible,
   medicine,
@@ -35,6 +35,8 @@ const MedicineDetailModal = ({
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  const {toast} = useToast();
 
   useEffect(() => {
     setLocalMedicine(medicine);
@@ -70,7 +72,7 @@ const MedicineDetailModal = ({
       const res = await BatchesAPI.updateNote(selected.id, { note: note });
 
       if (res.data.success) {
-        message.success("Cập nhật thông tin lô thành công");
+        toast.success("Cập nhật thông tin lô thành công");
         
         // Cập nhật local state ngay lập tức
         setLocalMedicine((prev) => ({
@@ -93,7 +95,7 @@ const MedicineDetailModal = ({
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật note:", error);
-      message.error("Không thể cập nhật thông tin lô. Vui lòng thử lại!");
+      toast.error("Không thể cập nhật thông tin lô. Vui lòng thử lại!");
     }
   };
 

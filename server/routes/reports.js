@@ -8,18 +8,34 @@ const router = express.Router();
 // /api/reports/months/available?year=YYYY
 router.get("/months/revenue/available", authenticateToken, async (req, res) => {
   try {
-    //
     const { year } = req.query;
+
     let query = `
-      SELECT DISTINCT month_year, monthly_report_id, total_revenue as revenue, total_patient_count as patients, created_at as created, ExTRACT(YEAR FROM TO_DATE(month_year, 'YYYY-MM')) AS year, EXTRACT(MONTH FROM TO_DATE(month_year, 'YYYY-MM')) AS month
+      SELECT
+        DISTINCT
+        month_year,
+        monthly_report_id,
+        total_revenue AS revenue,
+        total_patient_count AS patients,
+        created_at AS created,
+        EXTRACT(YEAR FROM TO_DATE(month_year, 'YYYY-MM')) AS year,
+        EXTRACT(MONTH FROM TO_DATE(month_year, 'YYYY-MM')) AS month
       FROM monthly_revenue_reports
+      WHERE TO_DATE(month_year, 'YYYY-MM') 
+            < DATE_TRUNC('month', CURRENT_DATE)
     `;
-    let params = [];
+
+    const params = [];
+
+    // Filter theo năm (nếu có)
     if (year) {
-      query += ` WHERE EXTRACT(YEAR FROM TO_DATE(month_year, 'YYYY-MM')) = $1 `;
+      query += `
+        AND EXTRACT(YEAR FROM TO_DATE(month_year, 'YYYY-MM')) = $1
+      `;
       params.push(year);
     }
-    query += ` ORDER BY month_year DESC `;
+
+    query += ` ORDER BY month_year DESC`;
 
     const result = await pool.query(query, params);
 
@@ -35,6 +51,7 @@ router.get("/months/revenue/available", authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 /// ----------- Usage Method ----------- ///
 router.get(

@@ -119,7 +119,9 @@ export const usageMethodsAPI = {
 
 export const invoicesAPI = {
   getInvoices: (params) => api.get("/api/invoices", { params }),
+
   getInvoice: (id) => api.get(`/api/invoices/${id}`),
+    getStats: (params) => api.get("/api/invoices/stats", { params }),
   getInvoiceBasic: (id) => api.get(`api/invoices/basic/${id}`),
   createInvoice: (data) => api.post("/api/invoices", data),
   payInvoice: (id) => api.put(`/api/invoices/${id}/pay`),

@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
-  Card,
   Table,
   Input,
   Select,
   DatePicker,
   Space,
   Tag,
-  message,
   Row,
   Col,
-  Statistic,
   Button,
   Tooltip,
   Popconfirm,
@@ -24,7 +21,6 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   ClearOutlined,
-  EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import { invoicesAPI } from "../services/api";
@@ -51,6 +47,12 @@ const InvoiceManagement = () => {
     payment_status: "",
     dateRange: null,
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    paid: 0,
+    pending: 0,
+    totalRevenue: 0,
+  });
 
   const [visibleInvoiceModal, setVisibleInvoiceModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -60,6 +62,7 @@ const InvoiceManagement = () => {
 
   useEffect(() => {
     fetchInvoices();
+    fetchStats();
   }, [pagination.current, pagination.pageSize, filters]);
 
   const fetchInvoices = async () => {
@@ -98,6 +101,32 @@ const InvoiceManagement = () => {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const params = {};
+
+      if (filters.dateRange && filters.dateRange.length === 2) {
+        params.start_date = filters.dateRange[0].format("YYYY-MM-DD");
+        params.end_date = filters.dateRange[1].format("YYYY-MM-DD");
+      }
+
+      if (filters.search) {
+        params.search = filters.search;
+      }
+
+      if (filters.payment_status) {
+        params.payment_status = filters.payment_status;
+      }
+
+      const response = await invoicesAPI.getStats(params);
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPagination((prev) => ({ ...prev, current: 1 }));
@@ -130,9 +159,8 @@ const InvoiceManagement = () => {
 
       if (response.data.success) {
         toast.success("Thanh toán thành công");
-        // Refresh lại medical record để cập nhật payment_status
-        // await fetchMedicalRecord();
-        await fetchInvoices(); /// Tam.......
+        await fetchInvoices();
+        await fetchStats();
       } else {
         toast.error(response.data.message);
       }
@@ -162,16 +190,6 @@ const InvoiceManagement = () => {
       console.error("Error deleting invoice:", error);
       toast.error("Không thể xóa hóa đơn");
     }
-  };
-
-
-  // Thống kê
-  const stats = {
-    total: invoices.length,
-    paid: invoices.filter((i) => i.payment_status === "paid").length,
-    pending: invoices.filter((i) => i.payment_status === "pending").length,
-    today: invoices.filter((i) => moment(i.created_at).isSame(moment(), "day"))
-      .length,
   };
 
   const columns = [
@@ -389,10 +407,10 @@ const InvoiceManagement = () => {
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-orange-100 text-sm">Hôm nay</p>
-                  <p className="text-4xl font-bold mt-2">{stats.today}</p>
+                  <p className="text-orange-100 text-sm">Tổng doanh thu</p>
+                  <p className="text-4xl font-bold mt-2">{formatCurrency(stats.totalRevenue)}</p>
                 </div>
-                <CalendarOutlined className="text-5xl opacity-30" />
+                <DollarOutlined className="text-5xl opacity-30" />
               </div>
             </div>
           </Col>
@@ -506,6 +524,6 @@ const InvoiceManagement = () => {
       />
     </div>
   );
-};
-
+}
 export default InvoiceManagement;
+
